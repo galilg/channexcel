@@ -31,12 +31,13 @@ defmodule ChannexcelInterfaceWeb.QuotetoolChannel do
   # end
 
 
-  defp via("tool:" <> subtopic, name, user_type), do: Quotetool.via_tuple(%User{name: name, user_type: user_type})
+  defp via("tool:" <> owner_name), do: Quotetool.via_tuple(owner_name)
   #---- Handle In -------------------------------------------------------------
 
   def handle_in("new_tool", payload, socket) do
-    "tool:" <> subtopic = socket.topic
-    case QuotetoolSupervisor.start_tool(%User{name: payload["name"], user_type: payload["user_type"]}) do
+    "tool:" <> owner_name = socket.topic
+    case QuotetoolSupervisor.start_tool(
+      %User{name: payload["name"], user_type: payload["user_type"]}) do
       {:ok, _pid} ->
         {:reply, :ok, socket}
       {:error, reason} ->
@@ -44,9 +45,16 @@ defmodule ChannexcelInterfaceWeb.QuotetoolChannel do
     end
   end
 
-  # def handle_in("add_user", name, user_type, socket) do
-  #   case Quotetool.add_user(via(socket.topic, name, user_type), %)
-  # end
+  def handle_in("add_user", payload, socket) do
+    case Quotetool.add_user(via(socket.topic), %User{name: payload["name"], user_type: payload["user_type"]}) do
+      :ok ->
+        broadcast! socket, "player_added", %{message: "New player just joined: " <> payload["user_type"]}
+        {:noreply, socket}
+      {:error, reason} ->
+        {:reply, {:error, %{reason: inspect(reason)}}, socket}
+      :error -> {:reply, :error, socket}
+    end
+  end
 
 
 end
