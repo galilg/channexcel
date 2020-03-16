@@ -48,7 +48,7 @@ defmodule ChannexcelInterfaceWeb.QuotetoolChannel do
   def handle_in("add_user", payload, socket) do
     case Quotetool.add_user(via(socket.topic), %User{name: payload["name"], user_type: payload["user_type"]}) do
       :ok ->
-        broadcast! socket, "player_added", %{message: "New player just joined: " <> payload["user_type"]}
+        broadcast! socket, "user_added", %{message: "New user just joined: " <> payload["name"]}
         {:noreply, socket}
       {:error, reason} ->
         {:reply, {:error, %{reason: inspect(reason)}}, socket}
@@ -56,5 +56,13 @@ defmodule ChannexcelInterfaceWeb.QuotetoolChannel do
     end
   end
 
+  def handle_in("room_message", payload, socket) do
+    broadcast! socket, "generic_message", %{message: payload}
+    {:noreply, socket}
+  end
 
+  def handle_in("direct_message", payload, socket) do
+    broadcast! socket, "direct_message:" <> payload["receiver"],  %{message: payload["message"]}
+    {:noreply, socket}
+  end
 end

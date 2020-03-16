@@ -8,7 +8,7 @@ defmodule Channexcel.Page do
   @enforce_keys [:page_name, :owner, :workbook]
   defstruct [:page_name, :owner, :workbook]
 
-  def new(name, %User{} = owner) do
+  def new(name, owner) do
     {:ok, %Page{page_name: name, owner: owner, workbook: %Workbook{}}}
   end
   def new(_, _) do

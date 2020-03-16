@@ -3,7 +3,7 @@ defmodule Channexcel.Quotetool do
 
   alias Channexcel.{Page, User}
   alias Channexcel.Sheet, as: ChanSheet
-  @permitted_roles [:dev, :trader, :marketer]
+  @permitted_roles [:dev, :trader, :marketer, "dev"]
   @timeout 1000 * 60 * 60 * 24 #24 hours in milliseconds
   #---- Init ------------------------------------------------------------------
   def init(%User{} = owner) do
@@ -14,14 +14,14 @@ defmodule Channexcel.Quotetool do
 
   def fresh_state(book_name, %User{} = owner) do
     users = MapSet.new([owner])
-    case Page.new(book_name, owner) do
+    case Page.new(book_name, owner.name) do
       {:ok, page} -> %{users: users, page: page}
       {:error, reason} -> {:error, reason}
     end
   end
 
   def start_link(%User{} = owner)  do
-    GenServer.start_link(__MODULE__, owner, name: via_tuple(owner))
+    GenServer.start_link(__MODULE__, owner, name: via_tuple(owner.name))
   end
 
   #---- Handle Info -----------------------------------------------------------
@@ -39,6 +39,9 @@ defmodule Channexcel.Quotetool do
     {:stop, {:shutdown, :timeout}, state_data}
   end
 
+  # def add_user_to_list(state_data, %User{} = user) do
+  #   %{state_data | users: MapSet.put(state_data.users, user)}
+  # end
   #---- Handle Calls ----------------------------------------------------------
   def handle_call({:add_user, user}, _from, state_data) do
     state_data
@@ -94,7 +97,8 @@ defmodule Channexcel.Quotetool do
     state_data = new_state_data
     |> IO.inspect()
   end
-  def add_user_to_list(state_data, user) do
+
+  def add_user_to_list(state_data, %User{} = user) do
     case user.user_type in (@permitted_roles) do
       true -> %{state_data | users: MapSet.put(state_data.users, user)}
       false -> {:reply, :error, state_data}
@@ -109,11 +113,11 @@ defmodule Channexcel.Quotetool do
   end
 
   def reply_success(state_data, reply) do
-    :ets.insert(:tool_state, {state_data.page.owner.name, state_data})
+    :ets.insert(:tool_state, {state_data.page.owner, state_data})
     {:reply, reply, state_data, @timeout}
   end
 
-  def via_tuple(%User{} = user), do: {:via, Registry, {Registry.Quotetool, user}}
+  def via_tuple(owner_name), do: {:via, Registry, {Registry.Quotetool, owner_name}}
 
   def terminate({:shutdown, :timeout}, state_data) do
     :ets.delete(:tool_state, state_data.page.owner.name)
