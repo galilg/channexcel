@@ -23,6 +23,14 @@ h6{font-size: 1.4rem; letter-spacing: 0; line-height: 1.2}
   position: relative;
   width: 100%
 }
+
+.container-body{
+  margin: 0 auto;
+  max-width: 100%;
+  padding: 0 2.0rem;
+  position: relative;
+  width: 100%
+}
 select {
   width: auto;
 }
@@ -90,7 +98,7 @@ header {
   width: 100%;
   background: #fdfdfd;
   border-bottom: 1px solid #eaeaea;
-  margin-bottom: 2rem;
+  margin-bottom: 0;
 }
 header section {
   align-items: center;

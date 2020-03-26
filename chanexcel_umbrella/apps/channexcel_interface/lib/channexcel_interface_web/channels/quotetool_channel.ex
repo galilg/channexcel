@@ -65,4 +65,15 @@ defmodule ChannexcelInterfaceWeb.QuotetoolChannel do
     broadcast! socket, "direct_message:" <> payload["receiver"],  %{message: payload["message"]}
     {:noreply, socket}
   end
+
+  def handle_in("insert_data", payload, socket) do
+    case Quotetool.insert_data(via(socket.topic), payload["sheet_name"], payload["data"]) do
+      :ok ->
+        {:reply, :ok, socket}
+      {:error, reason} ->
+        {:reply, {:error, %{reason: inspect(reason)}}, socket}
+      :error ->
+        {:reply, :error, socket}
+    end
+  end
 end
