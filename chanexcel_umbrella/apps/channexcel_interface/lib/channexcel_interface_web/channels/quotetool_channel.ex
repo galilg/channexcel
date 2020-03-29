@@ -57,7 +57,7 @@ defmodule ChannexcelInterfaceWeb.QuotetoolChannel do
   end
 
   def handle_in("room_message", payload, socket) do
-    broadcast! socket, "generic_message", %{message: payload}
+    broadcast! socket, "generic_message", %{sender: payload["sender"], message: payload["message"]}
     {:noreply, socket}
   end
 

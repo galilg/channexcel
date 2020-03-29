@@ -1,6 +1,8 @@
 <template>
     <div class="row flex-xl-nowrap2">
         <div class="border-view col-md-3 col-xl-2 col-12 h1">
+            <label>Enter User Name:</label>
+            <input id="userName" style="margin-top: 10px;" v-model="userName" type="text"/>
             <label>Enter Channel Name:</label>
             <input id="channelName" style="margin-top: 10px;" v-model="chanName" @keyup="createChannelName()" type="text"/>
             <b-button class="side-buttons btn-primary" style="margin-top: 10px;" variant="primary" @click="new_channel()">New Channel</b-button>
@@ -8,14 +10,35 @@
                 <option v-for="channel in channelList" :value="channel.value">{{ channel.text }}</option>
                 </select>
         
-            <b-button class="side-buttons btn-primary" style="margin-top: 10px;" variant="primary" @click="join_channel('otherGalil')">Join Channel</b-button>
-        
-                  
+            <b-button class="side-buttons btn-primary" style="margin-top: 10px;" variant="primary" @click="join_channel('otherGalil')">Join Channel</b-button>     
         </div>
         <div class="main-view col-md-9 col-xl-8 col-12 pd-md-3 pl-md-5">
             <div class="vue-message">
                 <div v-if="showJoined">{{ joinedChannel }}</div>
-              </div>
+                <br>
+                <div>
+                    <label>Convo Area</label> 
+                    <b-form-textarea
+                      id="textarea"
+                      class="convo-text"
+                      v-model="totalMessage"
+                      placeholder="convo"
+                      lazy-formatter
+                      :formatter="formatter"
+                      rows="20"
+                      max-rows="6"
+                    ></b-form-textarea>
+                    <b-form-textarea
+                      id="textarea"
+                      v-model="nextMessage"
+                      placeholder="Enter something..."
+                      rows="3"
+                      max-rows="6"
+                      @keyup.enter="sendMessage()"
+                    ></b-form-textarea>
+                
+                    <pre class="mt-3 mb-0">{{ nextMessage }}</pre>
+                  </div>
             </div>
         </div>
     </div>
@@ -35,18 +58,19 @@ export default {
     data() {
         return {
             active: true,
-            joinedChannel: "",
+            joinedChannel: '',
+            userName: '',
             showJoined: false,
             socket: s,
             channel: null,
             channelList: [],
-            chanName: ''
+            chanName: '',
+            totalMessage: '',
+            nextMessage: '',
+            messageFeed: []
         }
     },
     methods: {
-        // showJoined() {
-        //     this.showMessage = true
-        // }, 
         join(channel) {
             channel.join()
             .receive("ok", res => {
@@ -59,13 +83,23 @@ export default {
         createChannelName(){
             console.log(this.chanName)
         },
+        sendMessage(){
+            // this.totalMessage += '\n';
+            // this.totalMessage += this.nextMessage;
+            this.room_message(this.channel, this.nextMessage);
+            this.nextMessage = '';
+        },
+        receive_message(sender, message) {
+            this.totalMessage += sender + ": " + message;
+        },
         join_channel(name) {
             var socket = new Phoenix.Socket("/socket", {})
             socket.connect()
             // var channel = socket.channel("tool:" + this.chanName, {name: this.chanName, user_type: "dev"})
             this.channel = socket.channel("tool:" + this.chanName, {name: name, user_type: "dev"})
             this.joinedChannel = "Joined Channel: " + this.chanName + "!";
-            console.log(this.join(this.channel))
+            console.log(this.join(this.channel));
+            this.channel.on("generic_message", res => this.receive_message(res.sender, res.message));
             this.showJoined = true;
             // console.log(this.join(channel))
         },
@@ -98,7 +132,16 @@ export default {
             channel.push("direct_message", {receiver: name, message: msg})
             .receive("error", res => { console.log("cant do")})
             .receive("ok", res => {console.log("did it", res)})
+        },
+        room_message(channel,  msg) {
+            channel.push("room_message", {sender: this.userName, message:msg})
+            .receive("error", res => { console.log("erroring")})
+            .receive("ok", res => {console.log("did it good", res)})
+        },
+        formatter(value) {
+            return value.toLowerCase();
         }
+
     }
 }
 </script>
@@ -125,5 +168,11 @@ export default {
     .channel-select{
         height: 350px !important;
         font-size: larger;
+    }
+    .text-area{
+        border: none;
+    }
+    .convo-text{
+        font-size: 15pt !important;
     }
 </style>

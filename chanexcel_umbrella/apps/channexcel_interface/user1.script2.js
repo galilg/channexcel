@@ -1,6 +1,3 @@
-var socket = new Phoenix.Socket("/socket", {})
-
-socket.connect()
 
 
 function new_channel(name, user_type) {
@@ -29,27 +26,15 @@ function leave(channel) {
   })
 } 
 
-var user1 = new_channel("Galil", "dev")
 
-
-join(user1)
-
-function new_tool(channel, name, user_type) {
-channel.push("new_tool", {name: name, user_type: user_type})
-    .receive("ok", response => {
-        console.log("New quote tool!", response)
-})
-    .receive("error", response => {
-        console.log("Unable to start a new quote tool :(", response)
-})
+function add_user(channel, name, user_type) {
+  channel.push("add_user", {name: name, user_type: user_type})
+	.receive("error", res => {
+		console.log("Unable to add new user")})
 }
 
-new_tool(user1, "Galil", "dev")
 
 
-user1.on("user_added", response => {
-	console.log("User Added", response)
-})
 
 function send_dir(channel, name, msg) {
     channel.push("direct_message", {receiver: name, message: msg})
@@ -57,7 +42,23 @@ function send_dir(channel, name, msg) {
     .receive("ok", res => {console.log("did it", res)})
 }
 
-user1.on("direct_message:Galil", res => {console.log(res.message)})
-user1.on("generic_message", res => {console.log(res.message)})
+var socket = new Phoenix.Socket("/socket", {})
 
-send_dir(user1, "Other", "Hello other, if that is who you are!")
+socket.connect()
+
+var user2 = new_channel("Galil", "ok")
+
+join(user2)
+
+user2.on("user_added", response => {
+	console.log("User Added", response)
+})
+
+add_user(user2, "Other", "dev")
+user2.on("direct_message:Other", res => {console.log(res.message)})
+
+send_dir(user2, "Galil", "Hello.")
+
+
+
+
