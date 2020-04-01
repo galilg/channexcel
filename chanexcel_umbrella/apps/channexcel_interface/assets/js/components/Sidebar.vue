@@ -18,16 +18,17 @@
                 <br>
                 <div>
                     <label>Convo Area</label> 
-                    <b-form-textarea
+                    <b-form-textarea readonly
                       id="textarea"
                       class="convo-text"
                       v-model="totalMessage"
-                      placeholder="convo"
+                      placeholder=""
                       lazy-formatter
                       :formatter="formatter"
                       rows="20"
                       max-rows="6"
                     ></b-form-textarea>
+                    <br>
                     <b-form-textarea
                       id="textarea"
                       v-model="nextMessage"
