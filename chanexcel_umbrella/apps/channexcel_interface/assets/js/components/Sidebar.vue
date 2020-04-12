@@ -1,16 +1,19 @@
 <template>
     <div class="row flex-xl-nowrap2">
         <div class="border-view col-md-3 col-xl-2 col-12 h1">
-            <label>Enter User Name:</label>
-            <input id="userName" style="margin-top: 10px;" v-model="userName" type="text"/>
-            <label>Enter Channel Name:</label>
-            <input id="channelName" style="margin-top: 10px;" v-model="chanName" @keyup="createChannelName()" type="text"/>
-            <b-button class="side-buttons btn-primary" style="margin-top: 10px;" variant="primary" @click="new_channel()">New Channel</b-button>
-            <select class="custom-select custom-select-lg mb-3 channel-select" style="font-size: 16pt;" multiple size="5">
-                <option v-for="channel in channelList" :value="channel.value">{{ channel.text }}</option>
-                </select>
-        
-            <b-button class="side-buttons btn-primary" style="margin-top: 10px;" variant="primary" @click="join_channel('otherGalil')">Join Channel</b-button>     
+            <label :class="registerInput" class="name-label">Enter User Name:</label>
+            <input id="userName" :class="registerInput" style="margin-top: 10px;" :disabled="validated == true" v-model="userName" type="text"/>
+            <b-button class="side-buttons btn-primary" style="margin-top: 10px;" :disabled="validated == true" variant="primary" @click="register()">Register</b-button>
+            <div :disabled="validated == 0">
+                <label>Enter Channel Name:</label>
+                <input id="channelName" style="margin-top: 10px;" v-model="chanName" :disabled="validated == false" @keyup="createChannelName()" type="text"/>
+                <b-button class="side-buttons btn-primary" style="margin-top: 10px;" :disabled="validated == false" variant="primary" @click="new_channel()">New Channel</b-button>
+                <select class="custom-select custom-select-lg mb-3 channel-select" :disabled="validated == false" style="font-size: 16pt;" multiple size="5">
+                    <option v-for="channel in channelList" :value="channel.value">{{ channel.text }}</option>
+                    </select>
+            
+                <b-button class="side-buttons btn-primary" style="margin-top: 10px;" :disabled="validated == 0" variant="primary" @click="join_channel('otherGalil')">Join Channel</b-button>         
+            </div>
         </div>
         <div class="main-view col-md-9 col-xl-8 col-12 pd-md-3 pl-md-5">
             <div class="vue-message">
@@ -68,7 +71,14 @@ export default {
             chanName: '',
             totalMessage: '',
             nextMessage: '',
-            messageFeed: []
+            messageFeed: [],
+            validated: false,
+            register_error: false
+        }
+    },
+    computed: {
+        registerInput: function () {
+            return this.register_error ? 'reg-error' : '';
         }
     },
     methods: {
@@ -93,22 +103,22 @@ export default {
         receive_message(sender, message) {
             this.totalMessage += sender + ": " + message;
         },
-        join_channel(name) {
+        join_channel(chan=this.chanName, name) {
             var socket = new Phoenix.Socket("/socket", {})
             socket.connect()
             // var channel = socket.channel("tool:" + this.chanName, {name: this.chanName, user_type: "dev"})
-            this.channel = socket.channel("tool:" + this.chanName, {name: name, user_type: "dev"})
-            this.joinedChannel = "Joined Channel: " + this.chanName + "!";
+            this.channel = socket.channel("tool:" + chan, {name: name, user_type: "dev"})
+            this.joinedChannel = "Joined Channel: " + chan + "!";
             console.log(this.join(this.channel));
             this.channel.on("generic_message", res => this.receive_message(res.sender, res.message));
             this.showJoined = true;
             // console.log(this.join(channel))
         },
-        new_channel() {
-            var new_chan = {value: this.chanName, text: this.chanName}
+        new_channel(chanName=this.chanName) {
+            var new_chan = {value: chanName, text: chanName}
             this.channelList.push(new_chan);
-            this.join_channel(this.chanName);
-            this.new_quotetool(this.channel, this.chanName, "dev");
+            this.join_channel(chanName);
+            this.new_quotetool(this.channel, chanName, "dev");
         },
         add_user(channel, name, user_type) {
             channel.push("add_user", {name: name, user_type: user_type})
@@ -141,7 +151,21 @@ export default {
         },
         formatter(value) {
             return value.toLowerCase();
+        },
+        register() {
+            if (this.userName === ''){
+                this.register_error = true;
+            } else{
+                // this.new_channel(this.userName + ' (Self)')
+
+                var new_chan = {value: this.userName, text: this.userName + ' (Self)'}
+                this.channelList.push(new_chan);
+                this.join_channel(this.userName, this.userName);
+                this.new_quotetool(this.channel, this.userName , "dev");
+                this.validated = true;
+            }
         }
+
 
     }
 }
@@ -175,5 +199,12 @@ export default {
     }
     .convo-text{
         font-size: 15pt !important;
+    }
+    .name-label{
+        color: black;
+    }
+    .reg-error {
+        border-color: red !important;
+        color: red;
     }
 </style>
